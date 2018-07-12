@@ -136,8 +136,19 @@ namespace Calculator
                 }
                 else
                 {
-                    Operand token1 = evalStack.Pop();
-                    Operand token2 = evalStack.Pop();
+                    Operand token1 = new Operand("");
+                    Operand token2 = new Operand("");
+                    try
+                    {
+                        token1 = evalStack.Pop();
+                        token2 = evalStack.Pop();
+                    }
+
+                    catch (System.InvalidOperationException)
+                    {
+                        Console.WriteLine("Invalid expression/command");
+                        return -1;
+                    }
 
                     double value1 = Convert.ToDouble(token1.getValue());
                     double value2 = Convert.ToDouble(token2.getValue());
