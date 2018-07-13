@@ -103,7 +103,7 @@ namespace Calculator
                         //operators that are not parentheses
                         else
                         {
-                            //Operator currOpToken = currToken as Operator;
+                            Operator currOpToken = currToken as Operator;
                             Operator currStackToken = new Operator("");
 
                             while ((!(operatorStack.Count() == 0)) && ((currStackToken = (Operator)operatorStack.Peek()).getPriority() >= currOpToken.getPriority()))
