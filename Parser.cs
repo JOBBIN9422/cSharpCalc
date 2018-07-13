@@ -31,10 +31,9 @@ namespace Calculator
                 {
                     inputTokens.Add(new Operand(lastAns.ToString()));
                 }
-                //additionally parse each expression substring 
-                if (stringIsNumeric(s))
+                //purely numeric strings are operands
+                else if (stringIsNumeric(s))
                 {
-                    //purely numeric strings are operands
                     inputTokens.Add(new Operand(s));
                 }
                 else if (stringIsOperator(s))
@@ -42,7 +41,7 @@ namespace Calculator
                     inputTokens.Add(new Operator(s));
                 }
 
-                //strings which contain parentheses AND operands
+                //strings which contain parentheses AND operands must be further tokenized
                 else if (stringHasParens(s))
                 {   
                     for (int i = 0; i < s.Length; i++)
@@ -72,6 +71,7 @@ namespace Calculator
             Stack<Token> operatorStack = new Stack<Token>();
             ArrayList postfixExpr = new ArrayList();
 
+            //loop over the tokenized infix expression from user input
             foreach (Token currToken in inputTokens)
             {
                 //if current token is an operand, add to output expression
@@ -87,7 +87,7 @@ namespace Calculator
                         operatorStack.Push(currToken);
                     }
 
-                    //if current operator is a ')', pop from stack and add to expression until '(' is encountered 
+                    //if current operator is a ')', pop from stack and add to output until '(' is encountered 
                     else if (currToken.getValue().Equals(")"))
                     {
                         Token topStackToken = operatorStack.Pop();
@@ -103,7 +103,8 @@ namespace Calculator
                     {
                         Operator currOpToken = currToken as Operator;
                         Operator currStackToken = new Operator("");
-                        while (!(operatorStack.Count() == 0) && currOpToken.getPriority() <= currStackToken.getPriority())
+
+                        while ((!(operatorStack.Count() == 0)) && ((currStackToken = (Operator)operatorStack.Peek()).getPriority() >= currOpToken.getPriority()))
                         {
                             //add tokens from stack to output expression while the current token has <= priority than top of stack
                             currStackToken = operatorStack.Pop() as Operator;
@@ -127,68 +128,62 @@ namespace Calculator
         public double evaluatePostfix(ArrayList postfixExpr)
         {
             Stack<Operand> evalStack = new Stack<Operand>();
-
-            foreach (Token currToken in postfixExpr)
-            {
-                if (currToken is Operand)
-                {
-                    evalStack.Push((Operand)currToken);
-                }
-                else
-                {
-                    Operand token1 = new Operand("");
-                    Operand token2 = new Operand("");
-                    try
-                    {
-                        token1 = evalStack.Pop();
-                        token2 = evalStack.Pop();
-                    }
-
-                    catch (System.InvalidOperationException)
-                    {
-                        Console.WriteLine("Invalid expression/command");
-                        return -1;
-                    }
-
-                    double value1 = Convert.ToDouble(token1.getValue());
-                    double value2 = Convert.ToDouble(token2.getValue());
-
-                    double result;
-                    switch (currToken.getValue())
-                    {
-                        case "+":
-                            result = value2 + value1;
-                            evalStack.Push(new Operand(result.ToString()));
-                            break;
-                        case "-":
-                            result = value2 - value1;
-                            evalStack.Push(new Operand(result.ToString()));
-                            break;
-                        case "*":
-                            result = value2 * value1;
-                            evalStack.Push(new Operand(result.ToString()));
-                            break;
-                        case "/":
-                            result = value2 / value1;
-                            evalStack.Push(new Operand(result.ToString()));
-                            break;
-                        case "^":
-                            result = Math.Pow(value2, value1);
-                            evalStack.Push(new Operand(result.ToString()));
-                            break;
-                    }
-                }
-            }
-
-            //update calculator state info (store answer and clear expression buffer)
-            this.inputTokens.Clear();
             try
             {
+                foreach (Token currToken in postfixExpr)
+                {
+                    if (currToken is Operand)
+                    {
+                        //move operands onto the evaluation stack
+                        evalStack.Push((Operand)currToken);
+                    }
+                    else
+                    {
+                        //if we have an operator, remove two operands from the stack
+                        Operand token1 = evalStack.Pop();
+                        Operand token2 = evalStack.Pop();
+
+                        double value1 = Convert.ToDouble(token1.getValue());
+                        double value2 = Convert.ToDouble(token2.getValue());
+
+                        //evaluate the two operands based on the current operator
+                        double result;
+                        switch (currToken.getValue())
+                        {
+                            case "+":
+                                result = value2 + value1;
+                                evalStack.Push(new Operand(result.ToString()));
+                                break;
+                            case "-":
+                                result = value2 - value1;
+                                evalStack.Push(new Operand(result.ToString()));
+                                break;
+                            case "*":
+                                result = value2 * value1;
+                                evalStack.Push(new Operand(result.ToString()));
+                                break;
+                            case "/":
+                                result = value2 / value1;
+                                evalStack.Push(new Operand(result.ToString()));
+                                break;
+                            case "^":
+                                result = Math.Pow(value2, value1);
+                                evalStack.Push(new Operand(result.ToString()));
+                                break;
+                        }
+                    }
+                }
+
+                //update calculator state info (store answer and clear expression buffer)
+                this.inputTokens.Clear();
+
+                //pop the final result from the stack
                 this.lastAns = Convert.ToDouble(evalStack.Pop().getValue());
             }
             catch (System.InvalidOperationException)
             {
                 Console.WriteLine("Invalid expression/command");
+                this.lastAns = Double.NaN;
             }
             
             return this.lastAns;
@@ -197,17 +192,18 @@ namespace Calculator
         //helper functions
         public bool stringIsNumeric(string str)
         {
-            double value;
-            return double.TryParse(str, out value);
+            return double.TryParse(str, out double value);
         }
 
         public bool stringIsOperator(string str)
         {
+            //all operators (currently) are 1 character long
             if (str.Length > 1)
             {
                 return false;
             }
 
+            //check the input against all valid operators
             foreach (char currOperator in validOperators)
             {
                 if (str.Equals(currOperator.ToString()))
@@ -219,6 +215,10 @@ namespace Calculator
             return false;
         }
 
+        public bool opIsRightAssociative(Operator op)
+        {
+            return (op.getValue().Equals("^"));
+        }
         public bool stringHasParens(string str)
         {
             return (str.Contains('(') || str.Contains(')'));
