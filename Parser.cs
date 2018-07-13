@@ -190,6 +190,7 @@ namespace Calculator
             }
             catch (System.InvalidOperationException)
             {
+                this.inputTokens.Clear();
                 Console.WriteLine("Invalid expression/command");
                 this.lastAns = Double.NaN;
             }
