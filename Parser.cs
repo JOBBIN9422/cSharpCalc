@@ -72,49 +72,57 @@ namespace Calculator
             ArrayList postfixExpr = new ArrayList();
 
             //loop over the tokenized infix expression from user input
-            foreach (Token currToken in inputTokens)
+            try
             {
-                //if current token is an operand, add to output expression
-                if (currToken is Operand)
+                foreach (Token currToken in inputTokens)
                 {
-                    postfixExpr.Add(currToken);
-                }
-                else if (currToken is Operator)
-                {
-                    //if current operator is a '(', add it to op stack
-                    if (currToken.getValue().Equals("("))
+                    //if current token is an operand, add to output expression
+                    if (currToken is Operand)
                     {
-                        operatorStack.Push(currToken);
+                        postfixExpr.Add(currToken);
                     }
-
-                    //if current operator is a ')', pop from stack and add to output until '(' is encountered 
-                    else if (currToken.getValue().Equals(")"))
+                    else if (currToken is Operator)
                     {
-                        Token topStackToken = operatorStack.Pop();
-                        while (!(topStackToken.getValue().Equals("(")))
+                        //if current operator is a '(', add it to op stack
+                        if (currToken.getValue().Equals("("))
                         {
-                            postfixExpr.Add(topStackToken);
-                            topStackToken = operatorStack.Pop();
-                        }
-                    }
-
-                    //operators that are not parentheses
-                    else
-                    {
-                        Operator currOpToken = currToken as Operator;
-                        Operator currStackToken = new Operator("");
-
-                        while ((!(operatorStack.Count() == 0)) && ((currStackToken = (Operator)operatorStack.Peek()).getPriority() >= currOpToken.getPriority()))
-                        {
-                            //add tokens from stack to output expression while the current token has <= priority than top of stack
-                            currStackToken = operatorStack.Pop() as Operator;
-                            postfixExpr.Add(currStackToken);
+                            operatorStack.Push(currToken);
                         }
 
-                        operatorStack.Push(currToken);
+                        //if current operator is a ')', pop from stack and add to output until '(' is encountered 
+                        else if (currToken.getValue().Equals(")"))
+                        {
+                            Token topStackToken = operatorStack.Pop();
+                            while (!(topStackToken.getValue().Equals("(")))
+                            {
+                                postfixExpr.Add(topStackToken);
+                                topStackToken = operatorStack.Pop();
+                            }
+                        }
+
+                        //operators that are not parentheses
+                        else
+                        {
+                            //Operator currOpToken = currToken as Operator;
+                            Operator currStackToken = new Operator("");
+
+                            while ((!(operatorStack.Count() == 0)) && ((currStackToken = (Operator)operatorStack.Peek()).getPriority() >= currOpToken.getPriority()))
+                            {
+                                //add tokens from stack to output expression while the current token has <= priority than top of stack
+                                currStackToken = operatorStack.Pop() as Operator;
+                                postfixExpr.Add(currStackToken);
+                            }
+
+                            operatorStack.Push(currToken);
+                        }
                     }
                 }
             }
+            catch (System.InvalidOperationException)
+            {
+                return new ArrayList();
+            }
+
 
             //add remainder of stack to postfix expression
             while (!(operatorStack.Count() == 0))
